@@ -1,29 +1,23 @@
-# $PROJECT_NAME README
+# tbDEX discovery using nostr
 
-Congrats, project leads! You got a new project to grow!
+PFI (Participating Financial Institutions) need a way to advervise their wares to the world. This project is a simple example of how to use the nostr API to do that.
 
-This stub is meant to help you form a strong community around your work. It's yours to adapt, and may 
-diverge from this initial structure. Just keep the files seeded in this repo, and the rest is yours to evolve! 
+Nostr is a permissionless protocol (with existing "relays" around the world) that can be utilised for this today.  
 
 ## Introduction
 
-Orient users to the project here. This is a good place to start with an assumption
-that the user knows very little - so start with the Big Picture and show how this
-project fits into it. It may be good to reference/link the broader architecture in the
-`collaboration` repo or the developer site here.
+It is possible to use the nostr protocol directly from browsers. The example `customer.html` shows how to do that: where you can subscribe to advertisements from a PFI advertising a currency pair (and thus obtain their DID). Once you have their DID you can then issue Request For Quotes and other tbDEX protocol activities. 
 
-Then maybe a dive into what this project does.
+From the PFI perpective, publishing or advertising is simple: an event of a certain type in a specified format can be relayed around. 
 
-Diagrams and other visuals are helpful here. Perhaps code snippets showing usage.
+You can try this by opening `customer.html` in a browser, and then opening `pfi.html` in another browser. Start listening on the customer side, and then publish on the PFI side. You should see the event appear on the customer side in the console in the browser. 
 
-Project leads should complete, alongside this `README`:
-* [CODEOWNERS](./CODEOWNERS) - set project lead(s)
-* [CONTRIBUTING.md](./CONTRIBUTING.md) - Fill out how to: install prereqs, build, test, run, access CI, chat, discuss, file issues
 
-The other files in this template repo may be used as-is:
-* [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md)
-* [GOVERNANCE.md](./GOVERNANCE.md)
-* [LICENSE](./LICENSE)
+
+## Credits
+
+This project was originally based on the example of accessing nostr via vanilla JS: https://github.com/supertestnet/vanilla-js-nostr 
+
 
 ## Project Resources
 
@@ -31,6 +25,5 @@ The other files in this template repo may be used as-is:
 | ------------------------------------------ | ------------------------------------------------------------------------------ |
 | [CODEOWNERS](./CODEOWNERS)                 | Outlines the project lead(s)                                                   |
 | [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md) | Expected behavior for project contributors, promoting a welcoming environment |
-| [CONTRIBUTING.md](./CONTRIBUTING.md)       | Developer guide to build, test, run, access CI, chat, discuss, file issues     |
 | [GOVERNANCE.md](./GOVERNANCE.md)           | Project governance                                                             |
 | [LICENSE](./LICENSE)                       | Apache License, Version 2.0                                                    |

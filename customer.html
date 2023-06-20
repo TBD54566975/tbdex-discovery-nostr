@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="https://bitcoincore.tech/apps/bitcoinjs-ui/lib/bitcoinjs-lib.js"></script>
+    <script src="https://bundle.run/bip39@3.0.4"></script>
+    <script src="https://bundle.run/bip32@2.0.6"></script>
+    <script src="https://bundle.run/buffer@6.0.3"></script>
+    <script src="https://bundle.run/noble-secp256k1@1.2.14"></script>
+    <script src="https://bundle.run/browserify-cipher@1.0.1"></script>
+    <script>
+      function computeRawPrivkey(node) {
+        return bitcoinjs.ECPair.fromPrivateKey(node.privateKey, {
+          network: bitcoinjs.networks.mainnet
+        });
+      }
+      function getPrivkeyHex(backupwords) {
+        var seed = bip39.mnemonicToSeedSync(backupwords);
+        var node = bip32.fromSeed(seed);
+        var path = "m/44'/1237'/0'/0/0";
+        var root = node;
+        var child = root.derivePath(path);
+        return computeRawPrivkey(child);
+      }
+      function toHexString(byteArray) {
+        return Array.from(byteArray, function (byte) {
+          return ("0" + (byte & 0xff).toString(16)).slice(-2);
+        }).join("");
+      }
+      var backupwords = "customer abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon";
+      var privKey = getPrivkeyHex(backupwords);
+      privKey = privKey.__D.toString("hex");
+      var pubKey = nobleSecp256k1.getPublicKey(privKey, true);
+      //be aware that not all valid bitcoin pubkeys are valid nostr pubkeys. Valid bitcoin pubkeys include uncompressed pubkeys (that start with 04), compressed pubkeys whose y coordinate is positive (that start with 02), and compressed pubkeys whose y coordinate is negative (that start with 03).
+      //Only the ones that start with 02 are valid for nostr, which then allows us to chop off the 02 when storing the pubkey.
+      //So if you change this code to generate random pubkeys, be sure to only use ones that have an 02 at the beginning.
+      //The pubkeyMinus2 variable is the pubkey created a moment ago but without the 02 at the beginning.
+      var pubKeyMinus2 = pubKey.substring(2);
+      document.write("your public key is " + pubKeyMinus2 + "<br><br>");
+      document.write("Open console to see PFI offers:");
+
+      function normalizeRelayURL(e) {
+        let [t, ...r] = e.trim().split("?");
+        return (
+          "http" === t.slice(0, 4) && (t = "ws" + t.slice(4)),
+          "ws" !== t.slice(0, 2) && (t = "wss://" + t),
+          t.length && "/" === t[t.length - 1] && (t = t.slice(0, -1)),
+          [t, ...r].join("?")
+        );
+      }
+      var relay = "wss://nostr-tbd.website";
+      relay = normalizeRelayURL(relay);
+      var socket = new WebSocket(relay);
+
+      function subscribe(pubkey, pair) {
+        var filter = {
+          kinds: [555],
+          since: Math.floor(new Date().getTime() / 1000) - 86400
+        };
+        if (pair !== "all") {
+          console.log("FILTER FOR PAIR", pair);
+          filter["#y"] = [pair];
+        }
+
+        var subscription = ["REQ", "my-sub", filter];
+        subscription = JSON.stringify(subscription);
+        sessionStorage.subscription = subscription;
+        socket.send(sessionStorage.subscription);
+      }
+
+    </script>
+  </head>
+  <body>
+    <script>
+
+
+      socket.addEventListener("open", function (event) {
+        document.body.innerHTML += `FILTER PAIR: <select id="filter-pair"><option value="all">ALL</option><option value="AUDUSD">AUD USD</option><option value="ILSUSD">ILS USD</option></select>`;
+        document.body.innerHTML += `<button onclick="subscribe( pubKeyMinus2, document.getElementById('filter-pair').value )">Subscribe to PFI events</button><br>`;
+      });
+
+      // Listen for messages
+      socket.addEventListener("message", function (event) {
+        var event = JSON.parse(event.data);
+        if (!event[2] || !event[2].kind) return;
+
+        if (event[2].kind == 555) {
+          var tags = event[2].tags;
+          let did, pair;
+          if (tags.length == 2) {
+            if (!tags[0][0] || !tags[0][1] || tags[0][0] != "x") return;
+            if (!tags[1][0] || !tags[1][1] || tags[1][0] != "y") return;
+            did = tags[0][1];
+            pair = tags[1][1];
+            console.log(`PFI FOUND: ${did} - ${pair}`);
+          }
+        }
+      });
+    </script>
+    <script>
+    </script>
+  </body>
+</html>

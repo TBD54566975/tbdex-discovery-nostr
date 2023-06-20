@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="https://bitcoincore.tech/apps/bitcoinjs-ui/lib/bitcoinjs-lib.js"></script>
+    <script src="https://bundle.run/bip39@3.0.4"></script>
+    <script src="https://bundle.run/bip32@2.0.6"></script>
+    <script src="https://bundle.run/buffer@6.0.3"></script>
+    <script src="https://bundle.run/noble-secp256k1@1.2.14"></script>
+    <script src="https://bundle.run/browserify-cipher@1.0.1"></script>
+    <script>
+      function computeRawPrivkey(node) {
+        return bitcoinjs.ECPair.fromPrivateKey(node.privateKey, {
+          network: bitcoinjs.networks.mainnet
+        });
+      }
+      function getPrivkeyHex(backupwords) {
+        var seed = bip39.mnemonicToSeedSync(backupwords);
+        var node = bip32.fromSeed(seed);
+        var path = "m/44'/1237'/0'/0/0";
+        var root = node;
+        var child = root.derivePath(path);
+        return computeRawPrivkey(child);
+      }
+      function toHexString(byteArray) {
+        return Array.from(byteArray, function (byte) {
+          return ("0" + (byte & 0xff).toString(16)).slice(-2);
+        }).join("");
+      }
+      var backupwords =
+        "pfi abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon";
+      var privKey = getPrivkeyHex(backupwords);
+      privKey = privKey.__D.toString("hex");
+      var pubKey = nobleSecp256k1.getPublicKey(privKey, true);
+      //be aware that not all valid bitcoin pubkeys are valid nostr pubkeys. Valid bitcoin pubkeys include uncompressed pubkeys (that start with 04), compressed pubkeys whose y coordinate is positive (that start with 02), and compressed pubkeys whose y coordinate is negative (that start with 03).
+      //Only the ones that start with 02 are valid for nostr, which then allows us to chop off the 02 when storing the pubkey.
+      //So if you change this code to generate random pubkeys, be sure to only use ones that have an 02 at the beginning.
+      //The pubkeyMinus2 variable is the pubkey created a moment ago but without the 02 at the beginning.
+      var pubKeyMinus2 = pubKey.substring(2);
+      document.write("your public key is " + pubKeyMinus2 + "<br><br>");
+
+      function normalizeRelayURL(e) {
+        let [t, ...r] = e.trim().split("?");
+        return (
+          "http" === t.slice(0, 4) && (t = "ws" + t.slice(4)),
+          "ws" !== t.slice(0, 2) && (t = "wss://" + t),
+          t.length && "/" === t[t.length - 1] && (t = t.slice(0, -1)),
+          [t, ...r].join("?")
+        );
+      }
+      var relay = "wss://nostr-tbd.website";
+      relay = normalizeRelayURL(relay);
+      var socket = new WebSocket(relay);
+
+      function subscribe(pubkey, pair) {
+        var filter = {
+          kinds: [555],
+          since: Math.floor(new Date().getTime() / 1000) - 86400
+        };
+        if (pair !== "all") {
+          console.log("FILTER FOR PAIR", pair);
+          filter["#y"] = [pair];
+        }
+
+        var subscription = ["REQ", "my-sub", filter];
+        subscription = JSON.stringify(subscription);
+        sessionStorage.subscription = subscription;
+        socket.send(sessionStorage.subscription);
+      }
+
+    </script>
+  </head>
+  <body>
+    <script>
+
+
+      socket.addEventListener("open", function (event) {
+        document.body.innerHTML += "New Event: <br>";
+        document.body.innerHTML +=
+          'DID: <input type="text" id="did" placeholder="did:example:alice" value="did:example:alice" />';
+        document.body.innerHTML +=
+          'PAIR:  <select id="pair"><option value="AUDUSD">AUD USD</option><option value="ILSUSD">ILS USD</option></select>';
+        document.body.innerHTML += `<button onclick="makeNote( document.getElementById( 'did' ).value,document.getElementById( 'pair' ).value )">Publish PFI</button><br><br>`;
+      });
+
+      function makeNote(did, pair) {
+        console.log(`DID: ${did} - PAIR: ${pair}`);
+        var now = Math.floor(new Date().getTime() / 1000);
+        console.log(now);
+        var tags = [
+          ["x", did],
+          ["y", pair]
+        ];
+        var newevent = [0, pubKeyMinus2, now, 555, tags, ""];
+        var message = JSON.stringify(newevent);
+        console.log("message: '" + message + "'");
+        var msghash = bitcoinjs.crypto.sha256(message).toString("hex");
+        console.log("msghash: '" + msghash + "'");
+        nobleSecp256k1.schnorr.sign(msghash, privKey).then((value) => {
+          sig = value;
+          console.log("the sig is:", sig);
+          nobleSecp256k1.schnorr
+            .verify(sig, msghash, pubKeyMinus2)
+            .then((value) => {
+              console.log(
+                "is the signature valid for the above pubkey over the message 'test'?",
+                value
+              );
+              if (value) {
+                var fullevent = {
+                  id: msghash,
+                  pubkey: pubKeyMinus2,
+                  created_at: now,
+                  kind: 555,
+                  tags: tags,
+                  content: "",
+                  sig: sig
+                };
+                var sendable = ["EVENT", fullevent];
+                sessionStorage.sendable = JSON.stringify(sendable);
+                socket.send(
+                  '["EVENT",' +
+                    JSON.stringify(JSON.parse(sessionStorage.sendable)[1]) +
+                    "]"
+                );
+              }
+            });
+        });
+      }
+    </script>
+  </body>
+</html>
