@@ -1,14 +1,15 @@
 # tbDEX discovery using nostr
 
-PFI (Participating Financial Institutions) need a way to advervise their wares to the world. This project is a simple example of how to use the nostr API to do that.
+PFI (Participating Financial Institutions) need a way to advervise their wares to the world. And customers need a way to discover PFIs. 
+This project is a simple example of how to use the nostr API to do that.
 
-Nostr is a permissionless protocol (with existing "relays" around the world) that can be utilised for this today.  
+Nostr is a permissionless protocol (with existing "relays" around the world) that can be utilised for this.  
 
 ## Introduction
 
-It is possible to use the nostr protocol directly from browsers. The example `customer.html` shows how to do that: where you can subscribe to advertisements from a PFI advertising a currency pair (and thus obtain their DID). Once you have their DID you can then issue Request For Quotes and other tbDEX protocol activities. 
+It is possible to use the nostr protocol directly from browsers (based on the example credited below). The example `customer.html` shows how to do that: where you can discover advertisements from any PFI advertising a currency pair (and thus obtain their DID). Once you have their DID you can then issue Request For Quotes and other tbDEX protocol activities. 
 
-From the PFI perpective, publishing or advertising is simple: an event of a certain type in a specified format can be relayed around. 
+From the PFI perpective, publishing or advertising is simple: an event of a certain type in a specified format can be relayed around.
 
 You can try this by opening `customer.html` in a browser, and then opening `pfi.html` in another browser. Start listening on the customer side, and then publish on the PFI side. You should see the event appear on the customer side in the console in the browser. 
 
