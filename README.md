@@ -12,6 +12,10 @@ From the PFI perpective, publishing or advertising is simple: an event of a cert
 
 You can try this by opening `customer.html` in a browser, and then opening `pfi.html` in another browser. Start listening on the customer side, and then publish on the PFI side. You should see the event appear on the customer side in the console in the browser. 
 
+## Try it out: 
+
+1) Launch <a href="https://raw.githack.com/TBD54566975/tbdex-discovery-nostr/main/customer.html" target="_blank">the client</a> and open the console, and start listening. 
+2) Launch <a href="https://raw.githack.com/TBD54566975/tbdex-discovery-nostr/main/pfi.html">PFI side</a> and publish an event with a chosen currency pair, and note that the client will see matches in the console.
 
 
 ## Credits
